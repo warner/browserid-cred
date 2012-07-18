@@ -1,0 +1,41 @@
+<html>
+<head>
+<title>Demo</title>
+</head>
+
+<body>
+<h1>Demo</h1>
+
+<button class="assertion">Get an assertion</button>
+
+<p>Results: <span id="results"></span></p>
+
+<script src="jquery-min.js"></script>
+<script src="https://login.persona.org/include.js"></script>
+<script>
+navigator.id.watch({
+ onlogin: function(assertion) {
+   console.log("onlogin");
+   console.log(assertion);
+   $.ajax({url: "/login", type: "POST",
+           contentType: "text/json",
+           data: JSON.stringify({ assertion: assertion }),
+           dataType: "json",
+           success: function(data) {
+             $("#results").text(data.results);
+           }});
+ },
+ onlogout: function() {
+   console.log("onlogout");
+ }
+});
+$(document).ready(function() {
+ $("button.assertion").click(function() {
+  $("#results").text("logging in..");
+  navigator.id.request({});
+ });
+});
+</script>
+
+<hr>
+</body> </html>
