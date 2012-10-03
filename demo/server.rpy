@@ -4,7 +4,7 @@ from twisted.web import server, static
 from twisted.web.resource import Resource
 from twisted.cred.portal import IRealm, Portal
 
-from browserid_checker import BrowserIDAssertion, BrowserIDChecker
+from browserid import checker
 
 
 # this part is generic, and depends only upon how your web application likes
@@ -40,7 +40,7 @@ class Login(Resource):
 
     def render_POST(self, req):
         body = json.load(req.content)
-        credentials = BrowserIDAssertion(body["assertion"])
+        credentials = checker.BrowserIDAssertion(body["assertion"])
         d = portal.login(credentials, None, IAccount)
         def _done(stuff):
             interface, avatar, logout = stuff
@@ -60,7 +60,7 @@ portal = Portal(realm)
 # the 'audience' *must* match the domain this page is served from: assertions
 # are tied to a specific audience.
 audience = "http://localhost:8081"
-portal.registerChecker(BrowserIDChecker(audience, certsDir="../certs"))
+portal.registerChecker(checker.BrowserIDChecker(audience, certsDir="../certs"))
 
 root = static.File(".")
 root.putChild("login", Login(portal))
