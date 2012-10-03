@@ -41,7 +41,7 @@ class Login(Resource):
     def render_POST(self, req):
         body = json.load(req.content)
         credentials = checker.BrowserIDAssertion(body["assertion"])
-        d = portal.login(credentials, None, IAccount)
+        d = self.portal.login(credentials, None, IAccount)
         def _done(stuff):
             interface, avatar, logout = stuff
             account = avatar
