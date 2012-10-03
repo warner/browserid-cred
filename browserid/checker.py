@@ -77,6 +77,12 @@ class MemoryBodyProducer:
     def startProducing(self, consumer):
         consumer.write(self.body)
         return defer.succeed(None)
+    def pauseProducing(self):
+        pass
+    def resumeProducing(self):
+        pass
+    def stopProducing(self):
+        pass
 
 class _NormalToWebContextFactory:
     def __init__(self, factory):
