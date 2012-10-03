@@ -1,3 +1,4 @@
 /demo/twistd.pid
 *.py[co]
 *.sw[po]
+.venv
