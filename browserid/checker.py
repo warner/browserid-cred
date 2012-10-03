@@ -1,6 +1,9 @@
 
 import re, json
 from zope.interface import Interface, implements
+
+import OpenSSL
+
 from twisted.cred.checkers import ICredentialsChecker
 from twisted.web.client import Agent, HTTPConnectionPool, Headers
 from twisted.web.iweb import IBodyProducer
@@ -44,7 +47,7 @@ def _loadCAsFromDir(directoryPath):
             continue
         try:
             theCert = ssl.Certificate.loadPEM(data)
-        except ssl.SSL.Error:
+        except (ssl.SSL.Error, OpenSSL.crypto.Error):
             # Duplicate certificate, invalid certificate, etc.  We don't care.
             pass
         else:
