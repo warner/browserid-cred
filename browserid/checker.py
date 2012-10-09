@@ -1,28 +1,40 @@
+import json
+import re
 
-import re, json
 from zope.interface import Interface, implements
+
+import OpenSSL
+
 from twisted.cred.checkers import ICredentialsChecker
-from twisted.web.client import Agent, HTTPConnectionPool, Headers
-from twisted.web.iweb import IBodyProducer
 from twisted.internet import reactor, defer, protocol, ssl
 from twisted.python.filepath import FilePath
+from twisted.web.client import Agent, HTTPConnectionPool, Headers
+from twisted.web.iweb import IBodyProducer
+
 
 class IBrowserIDCredentials(Interface):
     pass
+
+
 class BrowserIDAssertion:
+    """
+    """
     implements(IBrowserIDCredentials)
+
     def __init__(self, assertion):
         self.assertion = assertion
+
 
 class BadBrowserIDCredentials(Exception):
     pass
 
+
 VERIFIER_URL = "https://browserid.org/verify"
 CERTS_DIR = "/etc/ssl/certs"
 
-# this code is copied from twisted/internet/endpoints.py, and will eventually
-# be made public so we don't have to copy it
 
+# XXX this code is copied from twisted/internet/endpoints.py, and will
+# eventually be made public so we don't have to copy it
 def _loadCAsFromDir(directoryPath):
     """
     Load certificate-authority certificate objects in a given directory.
@@ -32,7 +44,6 @@ def _loadCAsFromDir(directoryPath):
 
     @return: a C{list} of L{OpenSSL.crypto.X509} objects.
     """
-
     caCerts = {}
     for child in directoryPath.children():
         if not child.basename().split('.')[-1].lower() == 'pem':
@@ -44,7 +55,7 @@ def _loadCAsFromDir(directoryPath):
             continue
         try:
             theCert = ssl.Certificate.loadPEM(data)
-        except ssl.SSL.Error:
+        except (ssl.SSL.Error, OpenSSL.crypto.Error):
             # Duplicate certificate, invalid certificate, etc.  We don't care.
             pass
         else:
@@ -53,43 +64,72 @@ def _loadCAsFromDir(directoryPath):
 
 
 class GetBodyProtocol(protocol.Protocol):
+    """
+    """
     def __init__(self, deferred):
         self.deferred = deferred
         self.buf = ''
+
     def dataReceived(self, bytes):
         self.buf += bytes
+
     def connectionLost(self, reason):
         self.deferred.callback(self.buf)
 
+
 def getBody(response):
+    """
+    """
     d = defer.Deferred()
     response.deliverBody(GetBodyProtocol(d))
     return d
 
+
 class MemoryBodyProducer:
+    """
+    """
     implements(IBodyProducer)
+
     def __init__(self, body):
         self.body = body
         self.length = len(body)
+
     def startProducing(self, consumer):
         consumer.write(self.body)
         return defer.succeed(None)
 
+    def pauseProducing(self):
+        pass
+
+    def resumeProducing(self):
+        pass
+
+    def stopProducing(self):
+        pass
+
+
 class _NormalToWebContextFactory:
+    """
+    """
     def __init__(self, factory):
         self.factory = factory
+
     def getContext(self, host, port):
         return self.factory.getContext()
 
+
 class BrowserIDChecker:
+    """
+    """
     implements(ICredentialsChecker)
     credentialInterfaces = [IBrowserIDCredentials]
-    
+
     def __init__(self, audience,
                  verifierURL=VERIFIER_URL,
                  certsDir=CERTS_DIR,
                  persistentConnections=True):
-        assert re.search("^https?://", audience), "'audience' must be a domain like 'https://example.com'"
+        assertMsg = "'audience' must be a domain like 'https://example.com'"
+        assert re.search("^https?://", audience), assertMsg
         self.audience = audience
         self.verifier_url = verifierURL
         caCerts = _loadCAsFromDir(FilePath(certsDir))
@@ -127,21 +167,27 @@ class BrowserIDChecker:
         print "bad"
         raise BadBrowserIDCredentials()
 
+
 class DetailedBrowserIDChecker(BrowserIDChecker):
+    """
+    """
     def _parse_response(self, response):
         if response["status"] == "okay":
             return response
         raise BadBrowserIDCredentials()
 
+
 if __name__ == '__main__':
     import sys
+
+    def _done(res):
+        print res
+        reactor.stop()
+
     assertion = sys.argv[1]
     d = defer.Deferred()
     reactor.callLater(0, d.callback, "http://localhost:8081")
     d.addCallback(BrowserIDChecker)
     d.addCallback(lambda c: c.requestAvatarId(assertion))
-    def _done(res):
-        print res
-        reactor.stop()
     d.addBoth(_done)
     reactor.run()
