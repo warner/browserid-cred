@@ -29,7 +29,7 @@ class BadBrowserIDCredentials(Exception):
     pass
 
 
-VERIFIER_URL = "https://browserid.org/verify"
+VERIFIER_URL = "https://verifier.login.persona.org/verify"
 CERTS_DIR = "/etc/ssl/certs"
 
 
