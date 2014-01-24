@@ -10,9 +10,8 @@ This module provides a Cred plugin for BrowserID. It uses the verifier service h
 The server's Portal must be set up with something like the following (note that the audience **must** match the domain through which your site is accessed, since BrowserID assertions are tied to a specific audience):
 
     from twisted.cred.portal import Portal
-    portal = Portal(realm)
     audience = "https://example.com"
-    portal.registerChecker(BrowserIDChecker(audience))
+    portal = Portal(realm, [BrowserIDChecker(audience)])
 
 The frontend must deliver an assertion string, by using navigator.id.request() and the "onlogin" callback, then sending the assertion to the server via XHR or similar. The web Resource which receives the assertion must submit it to the checker wrapped in a `BrowserIDAssertion` object, like this:
 
